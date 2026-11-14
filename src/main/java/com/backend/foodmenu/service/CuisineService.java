@@ -4,9 +4,11 @@ import com.backend.foodmenu.dto.request.CuisineRequest;
 import com.backend.foodmenu.dto.response.CuisineResponse;
 import com.backend.foodmenu.entity.Cuisine;
 import com.backend.foodmenu.exception.DuplicateResourceException;
+import com.backend.foodmenu.exception.ResourceInUseException;
 import com.backend.foodmenu.exception.ResourceNotFoundException;
 import com.backend.foodmenu.mapper.CuisineMapper;
 import com.backend.foodmenu.repository.CuisineRepository;
+import com.backend.foodmenu.repository.RestaurantRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,10 +18,12 @@ import java.util.List;
 public class CuisineService {
 
     private final CuisineRepository cuisineRepository;
+    private final RestaurantRepository restaurantRepository;
     private final CuisineMapper cuisineMapper;
 
-    public CuisineService(CuisineRepository cuisineRepository, CuisineMapper cuisineMapper){
+    public CuisineService(CuisineRepository cuisineRepository, RestaurantRepository restaurantRepository, CuisineMapper cuisineMapper){
         this.cuisineRepository = cuisineRepository;
+        this.restaurantRepository = restaurantRepository;
         this.cuisineMapper = cuisineMapper;
     }
 
@@ -64,6 +68,9 @@ public class CuisineService {
 
     @Transactional
     public void deleteCuisine(Long id){
+        if (restaurantRepository.existsByCuisineId(id)){
+            throw new ResourceInUseException("Cuisine", id, "Restaurant");
+        }
         cuisineRepository.delete(findCuisine(id));
     }
 

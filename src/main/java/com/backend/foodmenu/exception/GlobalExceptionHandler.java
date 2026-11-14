@@ -47,6 +47,13 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.CONFLICT, exception.getMessage());
     }
 
+    @ExceptionHandler(ResourceInUseException.class)
+    public ResponseEntity<ErrorResponse> handleResourceInUse(
+            ResourceInUseException exception
+    ) {
+        return build(HttpStatus.CONFLICT, exception.getMessage());
+    }
+
     private ResponseEntity<ErrorResponse> build(
             HttpStatus status, String message
     ) {

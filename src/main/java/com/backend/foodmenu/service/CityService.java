@@ -4,9 +4,11 @@ import com.backend.foodmenu.dto.request.CityRequest;
 import com.backend.foodmenu.dto.response.CityResponse;
 import com.backend.foodmenu.entity.City;
 import com.backend.foodmenu.exception.DuplicateResourceException;
+import com.backend.foodmenu.exception.ResourceInUseException;
 import com.backend.foodmenu.exception.ResourceNotFoundException;
 import com.backend.foodmenu.mapper.CityMapper;
 import com.backend.foodmenu.repository.CityRepository;
+import com.backend.foodmenu.repository.RestaurantRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,10 +18,12 @@ import java.util.List;
 public class CityService {
 
     private final CityRepository cityRepository;
+    private final RestaurantRepository restaurantRepository;
     private final CityMapper cityMapper;
 
-    public CityService(CityRepository cityRepository, CityMapper cityMapper){
+    public CityService(CityRepository cityRepository, RestaurantRepository restaurantRepository, CityMapper cityMapper){
         this.cityRepository = cityRepository;
+        this.restaurantRepository = restaurantRepository;
         this.cityMapper = cityMapper;
     }
 
@@ -67,6 +71,9 @@ public class CityService {
 
     @Transactional
     public void deleteCity(Long id){
+        if (restaurantRepository.existsByCity_Id(id)){
+            throw new ResourceInUseException("City", id, "Restaurant");
+        }
         cityRepository.delete(findCity(id));
     }
 
