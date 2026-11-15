@@ -8,10 +8,7 @@ import com.backend.foodmenu.entity.Restaurant;
 import com.backend.foodmenu.exception.DuplicateResourceException;
 import com.backend.foodmenu.exception.ResourceNotFoundException;
 import com.backend.foodmenu.mapper.RestaurantMapper;
-import com.backend.foodmenu.repository.CityRepository;
-import com.backend.foodmenu.repository.CuisineRepository;
-import com.backend.foodmenu.repository.MenuItemRepository;
-import com.backend.foodmenu.repository.RestaurantRepository;
+import com.backend.foodmenu.repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,19 +25,22 @@ public class RestaurantService {
     private final CityRepository cityRepository;
     private final RestaurantMapper restaurantMapper;
     private final MenuItemRepository menuItemRepository;
+    private final OfferRepository offerRepository;
 
     public RestaurantService(
             RestaurantRepository restaurantRepository,
             CuisineRepository cuisineRepository,
             CityRepository cityRepository,
             RestaurantMapper restaurantMapper,
-            MenuItemRepository menuItemRepository
+            MenuItemRepository menuItemRepository,
+            OfferRepository offerRepository
     ) {
         this.restaurantRepository = restaurantRepository;
         this.cuisineRepository = cuisineRepository;
         this.cityRepository = cityRepository;
         this.restaurantMapper = restaurantMapper;
         this.menuItemRepository = menuItemRepository;
+        this.offerRepository = offerRepository;
     }
 
     @Transactional
@@ -96,6 +96,7 @@ public class RestaurantService {
     public void deleteRestaurant(Long restaurantId){
         Restaurant restaurant = findRestaurant(restaurantId);
         menuItemRepository.deleteAllByRestaurantId(restaurantId);
+        offerRepository.deleteAllByRestaurantId(restaurantId);
         restaurantRepository.delete(restaurant);
     }
 
