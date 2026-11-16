@@ -1,5 +1,6 @@
 package com.backend.foodmenu.service;
 
+import com.backend.foodmenu.config.CacheNames;
 import com.backend.foodmenu.dto.request.CityRequest;
 import com.backend.foodmenu.dto.response.CityResponse;
 import com.backend.foodmenu.entity.City;
@@ -9,6 +10,10 @@ import com.backend.foodmenu.exception.ResourceNotFoundException;
 import com.backend.foodmenu.mapper.CityMapper;
 import com.backend.foodmenu.repository.CityRepository;
 import com.backend.foodmenu.repository.RestaurantRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +32,7 @@ public class CityService {
         this.cityMapper = cityMapper;
     }
 
+    @CacheEvict(cacheNames = CacheNames.CITIES, key = "'all'")
     @Transactional
     public CityResponse createCity(CityRequest request){
         if (cityRepository.existsByNameIgnoreCase(request.name())){
@@ -38,6 +44,7 @@ public class CityService {
         return cityMapper.toResponse(savedCity);
     }
 
+    @Cacheable(cacheNames = CacheNames.CITIES, key = "#id")
     @Transactional(readOnly = true)
     public CityResponse getCityById(Long id){
         City city = findCity(id);
@@ -45,6 +52,7 @@ public class CityService {
         return cityMapper.toResponse(city);
     }
 
+    @Cacheable(cacheNames = CacheNames.CITIES, key = "'all'")
     @Transactional(readOnly = true)
     public List<CityResponse> findAllCities(){
 
@@ -54,6 +62,13 @@ public class CityService {
                 .toList();
     }
 
+    @Caching(
+            put = @CachePut(cacheNames = CacheNames.CITIES, key = "#id"),
+            evict = {
+                    @CacheEvict(cacheNames = CacheNames.CITIES, key = "'all'"),
+                    @CacheEvict(cacheNames = CacheNames.RESTAURANTS, allEntries = true)
+            }
+    )
     @Transactional
     public CityResponse updateCity(Long id, CityRequest request){
         City city = findCity(id);
@@ -69,6 +84,11 @@ public class CityService {
         return cityMapper.toResponse(city);
     }
 
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheNames.CITIES, key = "#id"),
+            @CacheEvict(cacheNames = CacheNames.CITIES, key = "'all'")
+    }
+    )
     @Transactional
     public void deleteCity(Long id){
         if (restaurantRepository.existsByCity_Id(id)){

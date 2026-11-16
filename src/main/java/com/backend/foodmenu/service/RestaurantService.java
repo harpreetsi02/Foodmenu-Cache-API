@@ -1,5 +1,6 @@
 package com.backend.foodmenu.service;
 
+import com.backend.foodmenu.config.CacheNames;
 import com.backend.foodmenu.dto.request.RestaurantRequest;
 import com.backend.foodmenu.dto.response.RestaurantResponse;
 import com.backend.foodmenu.entity.City;
@@ -9,6 +10,10 @@ import com.backend.foodmenu.exception.DuplicateResourceException;
 import com.backend.foodmenu.exception.ResourceNotFoundException;
 import com.backend.foodmenu.mapper.RestaurantMapper;
 import com.backend.foodmenu.repository.*;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,6 +48,7 @@ public class RestaurantService {
         this.offerRepository = offerRepository;
     }
 
+    @CacheEvict(cacheNames = CacheNames.RESTAURANTS, key = "'all'")
     @Transactional
     public RestaurantResponse createRestaurant(RestaurantRequest request){
         City city = findCity(request.cityId());
@@ -57,12 +63,14 @@ public class RestaurantService {
         return restaurantMapper.toResponse(savedRestaurant);
     }
 
+    @Cacheable(cacheNames = CacheNames.RESTAURANTS, key = "#restaurantId")
     @Transactional(readOnly = true)
     public RestaurantResponse getRestaurantById(Long restaurantId){
         return restaurantMapper.toResponse(findRestaurant(restaurantId));
     }
 
-    @Transactional
+    @Cacheable(cacheNames = CacheNames.RESTAURANTS, key = "'all'")
+    @Transactional(readOnly = true)
     public List<RestaurantResponse> getAllRestaurants(){
         return restaurantRepository.findAll()
                 .stream()
@@ -70,6 +78,10 @@ public class RestaurantService {
                 .toList();
     }
 
+    @Caching(
+            put = @CachePut(cacheNames = CacheNames.RESTAURANTS, key = "#restaurantId"),
+            evict = @CacheEvict(cacheNames = CacheNames.RESTAURANTS, key = "'all'")
+    )
     @Transactional
     public RestaurantResponse updateRestaurant(Long restaurantId, RestaurantRequest request){
         Restaurant restaurant = findRestaurant(restaurantId);
@@ -92,6 +104,10 @@ public class RestaurantService {
         return restaurantMapper.toResponse(restaurant);
     }
 
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CacheNames.RESTAURANTS, key = "#restaurantId"),
+            @CacheEvict(cacheNames = CacheNames.RESTAURANTS, key = "'all'")
+    })
     @Transactional
     public void deleteRestaurant(Long restaurantId){
         Restaurant restaurant = findRestaurant(restaurantId);

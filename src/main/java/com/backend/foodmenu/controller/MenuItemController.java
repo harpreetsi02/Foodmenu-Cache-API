@@ -42,14 +42,14 @@ public class MenuItemController {
     @Operation(summary = "Search menu items (optional filters, paginated)")
     @GetMapping
     public ResponseEntity<Page<MenuItemResponse>> searchMenuItem(
-            @PathVariable Long restaurant,
+            @PathVariable Long restaurantId,
             @RequestParam(required = false)MenuCategory category,
             @RequestParam(required = false)Boolean vegetarian,
             @RequestParam(required = false)BigDecimal maxPrice,
             @PageableDefault(size = 10, sort = "id")Pageable pageable
     ) {
         Page<MenuItemResponse> responses =
-                menuItemService.searchMenuItems(restaurant, category, vegetarian, maxPrice, pageable);
+                menuItemService.searchMenuItems(restaurantId, category, vegetarian, maxPrice, pageable);
 
         return ResponseEntity.ok(responses);
     }
