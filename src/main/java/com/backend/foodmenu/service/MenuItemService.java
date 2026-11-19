@@ -1,5 +1,6 @@
 package com.backend.foodmenu.service;
 
+import com.backend.foodmenu.config.CacheNames;
 import com.backend.foodmenu.dto.request.MenuItemRequest;
 import com.backend.foodmenu.dto.response.MenuItemResponse;
 import com.backend.foodmenu.entity.MenuCategory;
@@ -10,6 +11,8 @@ import com.backend.foodmenu.exception.ResourceNotFoundException;
 import com.backend.foodmenu.mapper.MenuItemMapper;
 import com.backend.foodmenu.repository.MenuItemRepository;
 import com.backend.foodmenu.repository.RestaurantRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -34,6 +37,7 @@ public class MenuItemService {
         this.menuItemMapper = menuItemMapper;
     }
 
+    @CacheEvict(cacheNames = CacheNames.MENU_ITEMS, allEntries = true)
     @Transactional
     public MenuItemResponse createMenuItem(Long restaurantId, MenuItemRequest request){
         Restaurant restaurant = findRestaurant(restaurantId);
@@ -47,26 +51,33 @@ public class MenuItemService {
         return menuItemMapper.toResponse(savedMenuItem);
     }
 
+    @Cacheable(cacheNames = CacheNames.MENU_ITEMS, key = "'items:' + #restaurantId + ':' + #menuItemId")
     @Transactional(readOnly = true)
     public MenuItemResponse getMenuItemById(Long restaurantId, Long menuItemId){
         return menuItemMapper.toResponse(findMenuItem(menuItemId, restaurantId));
     }
 
+    @Cacheable(
+            cacheNames = CacheNames.MENU_ITEMS,
+            key = "#restaurantId + ':' + #category + ':' + #vegetarian + ':' + #maxPrice" +
+                    " + ':' + #pageable.pageNumber + ':' + #pageable.pageSize + ':' + #pageable.sort"
+    )
     @Transactional(readOnly = true)
     public Page<MenuItemResponse> searchMenuItems(
             Long restaurantId, MenuCategory category,
-            boolean vegetarian, BigDecimal maxPrice, Pageable pageable
+            Boolean vegetarian, BigDecimal maxPrice, Pageable pageable
     ) {
         findRestaurant(restaurantId);
         return menuItemRepository.search(restaurantId, category, vegetarian, maxPrice, pageable)
                 .map(menuItemMapper::toResponse);
     }
 
+    @CacheEvict(cacheNames = CacheNames.MENU_ITEMS, allEntries = true)
     @Transactional
     public MenuItemResponse updateMenuItem(
             Long restaurantId, Long menuItemId, MenuItemRequest request
     ) {
-        MenuItem menuItem = findMenuItem(restaurantId, menuItemId);
+        MenuItem menuItem = findMenuItem(menuItemId, restaurantId);
 
         boolean nameChanged = !menuItem.getName().equalsIgnoreCase(request.name());
         if (nameChanged && menuItemRepository.existsByNameIgnoreCaseAndRestaurant_Id(request.name(), restaurantId)){
@@ -85,6 +96,7 @@ public class MenuItemService {
         return menuItemMapper.toResponse(menuItem);
     }
 
+    @CacheEvict(cacheNames = CacheNames.MENU_ITEMS, allEntries = true)
     @Transactional
     public void deleteMenuItem(Long restaurantId, Long menuItemId){
         menuItemRepository.delete(findMenuItem(menuItemId, restaurantId));

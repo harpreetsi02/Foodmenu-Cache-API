@@ -106,7 +106,9 @@ public class RestaurantService {
 
     @Caching(evict = {
             @CacheEvict(cacheNames = CacheNames.RESTAURANTS, key = "#restaurantId"),
-            @CacheEvict(cacheNames = CacheNames.RESTAURANTS, key = "'all'")
+            @CacheEvict(cacheNames = CacheNames.RESTAURANTS, key = "'all'"),
+            @CacheEvict(cacheNames = CacheNames.MENU_ITEMS, allEntries = true),
+            @CacheEvict(cacheNames = CacheNames.ACTIVE_OFFERS, allEntries = true)
     })
     @Transactional
     public void deleteRestaurant(Long restaurantId){
