@@ -63,7 +63,7 @@ public class RestaurantService {
         return restaurantMapper.toResponse(savedRestaurant);
     }
 
-    @Cacheable(cacheNames = CacheNames.RESTAURANTS, key = "#restaurantId")
+    @Cacheable(cacheNames = CacheNames.RESTAURANTS, key = "#restaurantId", sync = true)
     @Transactional(readOnly = true)
     public RestaurantResponse getRestaurantById(Long restaurantId){
         return restaurantMapper.toResponse(findRestaurant(restaurantId));

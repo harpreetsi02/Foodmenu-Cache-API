@@ -1,5 +1,6 @@
 package com.backend.foodmenu.service;
 
+import com.backend.foodmenu.config.CacheNames;
 import com.backend.foodmenu.dto.request.OfferRequest;
 import com.backend.foodmenu.dto.response.OfferResponse;
 import com.backend.foodmenu.entity.Offer;
@@ -10,6 +11,8 @@ import com.backend.foodmenu.mapper.OfferMapper;
 import com.backend.foodmenu.repository.CityRepository;
 import com.backend.foodmenu.repository.OfferRepository;
 import com.backend.foodmenu.repository.RestaurantRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,6 +39,7 @@ public class OfferService {
         this.cityRepository = cityRepository;
     }
 
+    @CacheEvict(cacheNames = CacheNames.ACTIVE_OFFERS, allEntries = true)
     @Transactional
     public OfferResponse createOffer(Long restaurantId, OfferRequest request){
         Restaurant restaurant = findRestaurant(restaurantId);
@@ -46,6 +50,7 @@ public class OfferService {
         return offerMapper.toResponse(savedOffer);
     }
 
+    @Cacheable(cacheNames = CacheNames.ACTIVE_OFFERS, key = "'restaurant:' + #restaurantId")
     @Transactional(readOnly = true)
     public List<OfferResponse> getAllOffers(Long restaurantId){
 
@@ -55,6 +60,7 @@ public class OfferService {
                 .toList();
     }
 
+    @Cacheable(cacheNames = CacheNames.ACTIVE_OFFERS, key = "'restaurant:' + #restaurantId")
     @Transactional(readOnly = true)
     public List<OfferResponse> getActiveOffers(Long restaurantId){
         findRestaurant(restaurantId);
@@ -64,6 +70,7 @@ public class OfferService {
                 .toList();
     }
 
+    @Cacheable(cacheNames = CacheNames.ACTIVE_OFFERS, key = "'city:' + #cityId")
     @Transactional(readOnly = true)
     public List<OfferResponse> getActiveOffersByCity(Long cityId){
         cityRepository.findById(cityId)
@@ -75,6 +82,7 @@ public class OfferService {
                 .toList();
     }
 
+    @CacheEvict(cacheNames = CacheNames.ACTIVE_OFFERS, allEntries = true)
     @Transactional
     public OfferResponse updateOffer(Long restaurantId, Long offerId, OfferRequest request) {
         Offer offer = findOffer(restaurantId, offerId);
@@ -88,6 +96,7 @@ public class OfferService {
         return offerMapper.toResponse(offer);
     }
 
+    @CacheEvict(cacheNames = CacheNames.ACTIVE_OFFERS, allEntries = true)
     @Transactional
     public void deleteOffer(Long restaurantId, Long offerId) {
         offerRepository.delete(findOffer(restaurantId, offerId));
